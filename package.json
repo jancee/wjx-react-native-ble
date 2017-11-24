@@ -1,0 +1,43 @@
+{
+  "name": "wjx-react-native-ble",
+  "version": "1.0.2",
+  "description": "A component for React Native, the ble control on the mobile terminal is realized.",
+  "main": "BleManager.js",
+  "scripts": {
+    "test": "echo \"TEST SUCCESS !\" && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jancee/wjx-react-native-ble.git"
+  },
+  "keywords": [
+    "React",
+    "Native",
+    "Jancee",
+    "ios",
+    "android",
+    "ble"
+  ],
+  "dependencies": {
+  },
+  "devDependencies": {
+    "babel-eslint": "^7.2.3",
+    "eslint": "4.5.0",
+    "eslint-plugin-react-app": "^1.0.2",
+    "husky": "0.14.3",
+    "lint-staged": "4.0.4",
+    "prettier": "1.6.1",
+    "react": ">=15.0.0",
+    "react-native": ">=0.24.0"
+  },
+  "author": {
+    "name": "Jingxi Wang",
+    "email": "jancee.wang@qq.com",
+    "url": "http://blog.wjingxi.com"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jancee/wjx-react-native-ble/issues"
+  },
+  "homepage": "https://github.com/jancee/wjx-react-native-ble#readme"
+}
