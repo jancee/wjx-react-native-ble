@@ -1,3 +1,6 @@
+## wjx-react-native-ble
+[![npm version](https://badge.fury.io/js/wjx-react-native-ble.svg)](https://badge.fury.io/js/wjx-react-native-ble)
+
 ## Supported Platforms
 - iOS 8+
 - Android (API 19+)
