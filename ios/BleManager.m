@@ -251,7 +251,7 @@ RCT_EXPORT_METHOD(start:(NSDictionary *)options callback:(nonnull RCTResponseSen
     //在没有开启蓝牙时，弹出提示框
     if ([[options allKeys] containsObject:@"showAlert"]){
         @synchronized(self) {
-            [_managerOptions setObject:[NSNumber numberWithBool:[[options valueForKey:@"showAlert"] boolValue]]
+            [self.managerOptions setObject:[NSNumber numberWithBool:[[options valueForKey:@"showAlert"] boolValue]]
                                 forKey:CBCentralManagerOptionShowPowerAlertKey];
         }
     }
@@ -260,7 +260,7 @@ RCT_EXPORT_METHOD(start:(NSDictionary *)options callback:(nonnull RCTResponseSen
     if ([[options allKeys] containsObject:@"restoreIdentifierKey"]) {
         
         @synchronized(self) {
-            [_managerOptions setObject:[options valueForKey:@"restoreIdentifierKey"]
+            [self.managerOptions setObject:[options valueForKey:@"restoreIdentifierKey"]
                                 forKey:CBCentralManagerOptionRestoreIdentifierKey];
         }
         
@@ -270,13 +270,13 @@ RCT_EXPORT_METHOD(start:(NSDictionary *)options callback:(nonnull RCTResponseSen
         } else {
             _manager = [[CBCentralManager alloc] initWithDelegate:self
                                                             queue:dispatch_get_main_queue()
-                                                          options:_managerOptions];
+                                                          options:self.managerOptions];
             _sharedManager = _manager;
         }
     } else {
         _manager = [[CBCentralManager alloc] initWithDelegate:self
                                                         queue:dispatch_get_main_queue()
-                                                      options:_managerOptions];
+                                                      options:self.managerOptions];
     }
     
     callback(@[]);
@@ -319,7 +319,7 @@ RCT_EXPORT_METHOD(reinit:(nonnull RCTResponseSenderBlock)callback) {
         //新建 manager
         _manager = [[CBCentralManager alloc] initWithDelegate:self
                                                         queue:dispatch_get_main_queue()
-                                                      options:_managerOptions];
+                                                      options:self.managerOptions];
         _sharedManager = _manager;
         
         _peripherals                = [NSMutableSet        set];
@@ -388,7 +388,7 @@ RCT_EXPORT_METHOD(connect:(NSString *)peripheralUUID callback:(nonnull RCTRespon
             NSArray<CBPeripheral *> *peripheralArray = [_manager retrievePeripheralsWithIdentifiers:@[uuid]];
             if([peripheralArray count] > 0){
                 peripheral = [peripheralArray objectAtIndex:0];
-                [_peripherals addObject:peripheral];
+                [self.peripherals addObject:peripheral];
                 NSLog(@"Successfull retrieved peripheral with UUID : %@", peripheralUUID);
             }
         } else {
@@ -401,7 +401,7 @@ RCT_EXPORT_METHOD(connect:(NSString *)peripheralUUID callback:(nonnull RCTRespon
         NSLog(@"Connecting to peripheral with UUID : %@", peripheralUUID);
         
         @synchronized(self) {
-            [_connectCallbacks setObject:callback forKey:[peripheral uuidAsString]];
+            [self.connectCallbacks setObject:callback forKey:[peripheral uuidAsString]];
         }
         
         [_manager connectPeripheral:peripheral options:nil];
@@ -502,7 +502,7 @@ RCT_EXPORT_METHOD(write:(NSString *)deviceUUID
                              andCharacteristic:characteristic];
         
         @synchronized(self) {
-            [_writeCallbacks setObject:callback forKey:key];
+            [self.writeCallbacks setObject:callback forKey:key];
         }
         
         RCTLogInfo(@"写数据(%lu): %@ ", (unsigned long)[message count], message);
@@ -518,17 +518,17 @@ RCT_EXPORT_METHOD(write:(NSString *)deviceUUID
                     firstMessage = [dataMessage subdataWithRange:NSMakeRange(count, maxByteSize)];
                 } else {
                     NSData* splitMessage = [dataMessage subdataWithRange:NSMakeRange(count, maxByteSize)];
-                    [_writeQueue addObject:splitMessage];
+                    [self.writeQueue addObject:splitMessage];
                 }
                 count += maxByteSize;
             }
             
             if (count < dataLength) {
                 NSData* splitMessage = [dataMessage subdataWithRange:NSMakeRange(count, dataLength - count)];
-                [_writeQueue addObject:splitMessage];
+                [self.writeQueue addObject:splitMessage];
             }
             
-            NSLog(@"队列分割消息: %lu", (unsigned long)[_writeQueue count]);
+            NSLog(@"队列分割消息: %lu", (unsigned long)[self.writeQueue count]);
             
             //发送数据
             [peripheral writeValue:firstMessage
@@ -648,7 +648,7 @@ RCT_EXPORT_METHOD(read:(NSString *)deviceUUID
         NSString *key = [self keyForPeripheral: peripheral andCharacteristic:characteristic];
         
         @synchronized(self) {
-            [_readCallbacks setObject:callback forKey:key];
+            [self.readCallbacks setObject:callback forKey:key];
         }
         
         [peripheral readValueForCharacteristic:characteristic];  // callback sends value
@@ -671,7 +671,7 @@ RCT_EXPORT_METHOD(readRSSI:(NSString *)deviceUUID callback:(nonnull RCTResponseS
     
     if (peripheral && peripheral.state == CBPeripheralStateConnected) {
         @synchronized(self) {
-            [_readRSSICallbacks setObject:callback forKey:[peripheral uuidAsString]];
+            [self.readRSSICallbacks setObject:callback forKey:[peripheral uuidAsString]];
         }
         [peripheral readRSSI];
     } else {
@@ -695,7 +695,7 @@ RCT_EXPORT_METHOD(retrieveServices:(NSString *)deviceUUID
     
     if (peripheral && peripheral.state == CBPeripheralStateConnected) {
         @synchronized(self) {
-            [_retrieveServicesCallbacks setObject:callback forKey:[peripheral uuidAsString]];
+            [self.retrieveServicesCallbacks setObject:callback forKey:[peripheral uuidAsString]];
         }
         [peripheral discoverServices:nil];
     } else {
@@ -757,7 +757,7 @@ RCT_EXPORT_METHOD(stopNotification:(NSString *)deviceUUID
         NSString *key = [self keyForPeripheral: peripheral andCharacteristic:characteristic];
         
         @synchronized(self) {
-            [_stopNotificationCallbacks setObject: callback forKey: key];
+            [self.stopNotificationCallbacks setObject: callback forKey: key];
         }
         
         if ([characteristic isNotifying]) {
@@ -788,7 +788,7 @@ RCT_EXPORT_METHOD(stopNotification:(NSString *)deviceUUID
      advertisementData:(NSDictionary *)advertisementData
                   RSSI:(NSNumber *)RSSI {
     @synchronized(self) {
-        [_peripherals addObject:peripheral];
+        [self.peripherals addObject:peripheral];
         [peripheral setAdvertisementData:advertisementData RSSI:RSSI];
         
         //NSLog(@"Discover peripheral: %@", [peripheral name]);
@@ -1026,10 +1026,10 @@ didUpdateNotificationStateForCharacteristic:(CBCharacteristic *)characteristic
         } else {
             // Notification has stopped
             NSLog(@"Notification ended on %@", characteristic.UUID);
-            RCTResponseSenderBlock stopNotificationCallback = [_stopNotificationCallbacks objectForKey:key];
+            RCTResponseSenderBlock stopNotificationCallback = [self.stopNotificationCallbacks objectForKey:key];
             stopNotificationCallback(@[]);
             
-            [_stopNotificationCallbacks removeObjectForKey:key];
+            [self.stopNotificationCallbacks removeObjectForKey:key];
         }
     }
 }
@@ -1049,7 +1049,7 @@ didWriteValueForCharacteristic:(CBCharacteristic *)characteristic
         NSLog(@"已发送数据");
         
         NSString *key = [self keyForPeripheral: peripheral andCharacteristic:characteristic];
-        RCTResponseSenderBlock writeCallback = [_writeCallbacks objectForKey:key];
+        RCTResponseSenderBlock writeCallback = [self.writeCallbacks objectForKey:key];
         
         if (writeCallback) {
             if (error) {
@@ -1057,13 +1057,13 @@ didWriteValueForCharacteristic:(CBCharacteristic *)characteristic
                 [self.writeCallbacks removeObjectForKey:key];
                 writeCallback(@[error.localizedDescription]);
             } else {
-                if ([_writeQueue count] == 0) {
+                if ([self.writeQueue count] == 0) {
                     [self.writeCallbacks removeObjectForKey:key];
                     writeCallback(@[]);
                 } else {
                     // Remove and write the queud message
-                    NSData *message = [_writeQueue objectAtIndex:0];
-                    [_writeQueue removeObjectAtIndex:0];
+                    NSData *message = [self.writeQueue objectAtIndex:0];
+                    [self.writeQueue removeObjectAtIndex:0];
                     [peripheral writeValue:message forCharacteristic:characteristic type:CBCharacteristicWriteWithResponse];
                 }
                 
@@ -1085,10 +1085,10 @@ didWriteValueForCharacteristic:(CBCharacteristic *)characteristic
     @synchronized(self) {
         NSLog(@"读到RSSI %@", rssi);
         NSString *key = [peripheral uuidAsString];
-        RCTResponseSenderBlock readRSSICallback = [_readRSSICallbacks objectForKey: key];
+        RCTResponseSenderBlock readRSSICallback = [self.readRSSICallbacks objectForKey: key];
         if (readRSSICallback) {
             readRSSICallback(@[[NSNull null], [NSNumber numberWithInteger:[rssi integerValue]]]);
-            [_readRSSICallbacks removeObjectForKey:key];
+            [self.readRSSICallbacks removeObjectForKey:key];
         }
     }
 }
@@ -1112,7 +1112,7 @@ didDiscoverServices:(NSError *)error {
         [servicesForPeriperal addObjectsFromArray:peripheral.services];
         
         @synchronized(self) {
-            [_retrieveServicesLatches setObject:servicesForPeriperal forKey:[peripheral uuidAsString]];
+            [self.retrieveServicesLatches setObject:servicesForPeriperal forKey:[peripheral uuidAsString]];
         }
         for (CBService *service in peripheral.services) {
             NSLog(@"服务 UUID：%@  Description：%@", service.UUID, service.description);
@@ -1141,7 +1141,7 @@ didDiscoverCharacteristicsForService:(CBService *)service
         NSString *peripheralUUIDString = [peripheral uuidAsString];
         
         //减少一个待获取的服务的特征
-        NSMutableSet *latch = [_retrieveServicesLatches valueForKey:peripheralUUIDString];
+        NSMutableSet *latch = [self.retrieveServicesLatches valueForKey:peripheralUUIDString];
         [latch removeObject:service];
         
         if ([latch count] == 0) { //所以需要获取的服务都找到了
@@ -1151,7 +1151,7 @@ didDiscoverCharacteristicsForService:(CBService *)service
                 retrieveServiceCallback(@[[NSNull null], [peripheral asDictionary]]);
                 [self.retrieveServicesCallbacks removeObjectForKey:peripheralUUIDString];
             }
-            [_retrieveServicesCallbacks removeObjectForKey:peripheralUUIDString];
+            [self.retrieveServicesCallbacks removeObjectForKey:peripheralUUIDString];
         }
     }
 }
