@@ -817,7 +817,7 @@ didFailToConnectPeripheral:(CBPeripheral *)peripheral
         
         if (connectCallback) {
             connectCallback(@[errorStr]);
-            [self.connectCallbacks removeObjectForKey:[connectCallback uuidAsString]];
+            [self.connectCallbacks removeObjectForKey:[peripheral uuidAsString]];
         }
     }
 }
