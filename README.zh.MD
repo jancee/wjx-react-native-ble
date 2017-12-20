@@ -1,142 +1,38 @@
 [![npm version](https://badge.fury.io/js/wjx-react-native-ble.svg)](https://badge.fury.io/js/wjx-react-native-ble)
 
-[Click Here, 中文介绍](./README.zh.MD)'
-
 ## wjx-react-native-ble
 
-## Supported Platforms
+
+## 兼容
 - iOS 8+
 - Android (API 19+)
 
-## Install
-Both approaches are described below.
+## 安装
 
-### Link Native Library with `react-native link`
-
-```shell
-react-native link wjx-react-native-ble
+### Link Libaray 
+```
+npm install --save wjx-react-native-ble
+react-native link
 ```
 
-After this step:
- * iOS should be linked properly.
- * Android will need one more step, you need to edit `android/app/build.gradle`:
-```gradle
-// file: android/app/build.gradle
-...
+### （Android）再进行以下步骤
+打开 `android/app/build.gradle`
+确保 `minSdkVersion` 最小为18，如果不是，请改为18。
 
-android {
-    ...
+## 例子
+参考 [example](https://github.com/innoveit/wjx-react-native-ble/tree/master/example)
 
-    defaultConfig {
-        ...
-        minSdkVersion 18 // <--- make sure this is 18 or greater
-        ...
-    }
-    ...
-}
-```
-
-### Link Native Library Manually
-
-#### iOS
-- Open the node_modules/wjx-react-native-ble/ios folder and drag BleManager.xcodeproj into your Libraries group.
-- Check the "Build Phases"of your project and add "libBleManager.a" in the "Link Binary With Libraries" section.
-
-#### Android
-##### Update Gradle Settings
-
-```gradle
-// file: android/settings.gradle
-...
-
-include ':wjx-react-native-ble'
-project(':wjx-react-native-ble').projectDir = new File(rootProject.projectDir, '../node_modules/wjx-react-native-ble/android')
-```
-##### Update Gradle Build
-
-```gradle
-// file: android/app/build.gradle
-...
-
-android {
-    ...
-
-    defaultConfig {
-        ...
-        minSdkVersion 18 // <--- make sure this is 18 or greater
-        ...
-    }
-    ...
-}
-
-dependencies {
-    ...
-    compile project(':wjx-react-native-ble')
-}
-```
-##### Update Android Manifest
-
-```xml
-// file: android/app/src/main/AndroidManifest.xml
-...
-    <uses-permission android:name="android.permission.BLUETOOTH"/>
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-...
-```
-
-##### Register React Package
-```java
-...
-import it.innove.BleManagerPackage; // <--- import
-
-public class MainApplication extends Application implements ReactApplication {
-
-    ...
-
-    @Override
-    protected List<ReactPackage> getPackages() {
-        return Arrays.<ReactPackage>asList(
-            new MainReactPackage(),
-            new BleManagerPackage() // <------ add the package
-        );
-    }
-
-    ...
-}
-```
-## Note
-- Remember to use the `start` method before anything.
-- If you have problem with old devices try avoid to connect/read/write to a peripheral during scan.
-- Android API >= 23 require the ACCESS_COARSE_LOCATION permission to scan for peripherals. React Native >= 0.33 natively support PermissionsAndroid like in the example.
-- Before write, read or start notification you need to call `retrieveServices` method
-
-## Example
-Look in the [example](https://github.com/innoveit/wjx-react-native-ble/tree/master/example) project.
-
-## Methods
+## 方法
 
 ### start(options)
-Init the module.
-Returns a `Promise` object.
-
-__Arguments__
+返回：`Promise` Object.
+参数：
 - `options` - `JSON`
 
-The parameter is optional the configuration keys are:
-- `showAlert` - `Boolean` - [iOS only] Show or hide the alert if the bluetooth is turned off during initialization
-- `restoreIdentifierKey` - `String` - [iOS only] Unique key to use for CoreBluetooth state restoration
-- `forceLegacy` - `Boolean` - [Android only] Force to use the LegacyScanManager
-
-__Examples__
-```js
-BleManager.start({showAlert: false})
-  .then(() => {
-    // Success code
-    console.log('Module initialized');
-  });
-
-```
+`options`的可选参数:
+- `showAlert` - `Boolean` - [仅iOS] 当蓝牙被关闭时，是否显示弹窗提示
+- `restoreIdentifierKey` - `String` - [仅iOS] 指定 CoreBluetooth 指定的Unique key作为状态恢复
+- `forceLegacy` - `Boolean` - [仅Android] 强制使用新式API LegacyScanManager
 
 ### scan(serviceUUIDs, seconds, allowDuplicates, scanningOptions)
 Scan for availables peripherals.
