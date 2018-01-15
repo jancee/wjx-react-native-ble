@@ -149,7 +149,7 @@ static BleManager *instance;
     
     CBPeripheral *peripheral = nil;
     
-    @synchronized(self.peripherals) {
+    @synchronized(self) {
         for (CBPeripheral *p in self.peripherals) {
             
             NSString* other = p.identifier.UUIDString;
@@ -201,7 +201,7 @@ static BleManager *instance;
 RCT_EXPORT_METHOD(getDiscoveredPeripherals:(nonnull RCTResponseSenderBlock)callback) {
     NSLog(@"获取所有发现的设备");
     NSMutableArray *discoveredPeripherals = [NSMutableArray array];
-    @synchronized(_peripherals) {
+    @synchronized(self) {
         for(CBPeripheral *peripheral in self.peripherals) {
             NSDictionary * obj = [peripheral asDictionary];
             [discoveredPeripherals addObject:obj];
@@ -221,7 +221,7 @@ RCT_EXPORT_METHOD(getConnectedPeripherals:(NSArray *)serviceUUIDStrings callback
     
     NSMutableArray *foundedPeripherals = [NSMutableArray array];
     if ([serviceUUIDs count] == 0) {
-        @synchronized(_peripherals) {
+        @synchronized(self) {
             for(CBPeripheral *peripheral in self.peripherals) {
                 if([peripheral state] == CBPeripheralStateConnected) {
                     NSDictionary *obj = [peripheral asDictionary];
@@ -297,7 +297,7 @@ RCT_EXPORT_METHOD(reinit:(nonnull RCTResponseSenderBlock)callback) {
         //找到所有已连接、正在连接设备
         NSMutableArray *foundedPeripherals = [NSMutableArray array];
         
-        @synchronized(_peripherals) {
+        @synchronized(self) {
             for(CBPeripheral *peripheral in self.peripherals) {
                 if([peripheral state] == CBPeripheralStateConnected || [peripheral state] == CBPeripheralStateConnecting) {
                     [foundedPeripherals addObject:peripheral];
