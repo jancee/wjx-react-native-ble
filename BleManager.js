@@ -282,6 +282,32 @@ class BleManager {
             });
         });
     }
+
+    requestMTU(peripheralId, mtu) {
+        return new Promise((fulfill, reject) => {
+          bleManager.requestMTU(peripheralId, mtu, (error) => {
+            if (error) {
+              reject(error);
+            } else {
+              fulfill();
+            }
+          });
+        });
+    }
+
+    removeBond(peripheralId) {
+        return new Promise((fulfill, reject) => {
+          bleManager.removeBond(peripheralId, (error) => {
+            if (error) {
+              reject(error);
+            } else {
+              fulfill();
+            }
+          });
+        });
+      }
+
+
 }
 
 module.exports = new BleManager();

@@ -22,6 +22,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.*;
+import android.os.Build;
+import static android.os.Build.VERSION_CODES.LOLLIPOP;
 
 /**
  * Peripheral wraps the BluetoothDevice and provides methods to convert to JSON.
@@ -32,12 +34,13 @@ public class Peripheral extends BluetoothGattCallback {
     private static final String CHARACTERISTIC_NOTIFICATION_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
     public static final String LOG_TAG = "Peripheral";
 
-    private BluetoothDevice device;
+    private final BluetoothDevice device;
     private BluetoothGatt gatt;
 
     private byte[] advertisingData;
     private int advertisingRSSI;
     private boolean connected = false;
+    private Callback requestMTUCallback;
 
 
     private Callback connectCallback;
@@ -697,6 +700,42 @@ public class Peripheral extends BluetoothGattCallback {
         }
 
     }
+
+    public void requestMTU(int mtu, Callback callback) {
+  		if (!isConnected()) {
+  			callback.invoke("Device is not connected", null);
+  			return;
+  		}
+
+  		if (gatt == null) {
+  			callback.invoke("BluetoothGatt is null", null);
+  			return;
+  		}
+
+  		if (Build.VERSION.SDK_INT >= LOLLIPOP) {
+  			requestMTUCallback = callback;
+  			gatt.requestMtu(mtu);
+  		} else {
+  			callback.invoke("The requestMTU require at least 21 API level", null);
+  			return;
+  		}
+
+  	}
+
+  	@Override
+  	public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
+  		super.onMtuChanged(gatt, mtu, status);
+  		if (requestMTUCallback != null) {
+  			if (status == BluetoothGatt.GATT_SUCCESS) {
+  				requestMTUCallback.invoke(null, mtu);
+  			} else {
+  				requestMTUCallback.invoke("Error requesting MTU status=" + status, null);
+  			}
+
+  			requestMTUCallback = null;
+  		}
+  	}
+
 
     // Some peripherals re-use UUIDs for multiple characteristics so we need to check the properties
     // and UUID of all characteristics instead of using service.getCharacteristic(characteristicUUID)
