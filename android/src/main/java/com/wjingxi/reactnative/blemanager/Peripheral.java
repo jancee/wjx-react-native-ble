@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
+import android.os.Build;
 import android.support.annotation.Nullable;
 import android.util.Base64;
 import android.util.Log;
@@ -21,8 +22,6 @@ import com.facebook.react.modules.core.RCTNativeAppEventEmitter;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.*;
-import android.os.Build;
 import static android.os.Build.VERSION_CODES.LOLLIPOP;
 
 /**
@@ -103,20 +102,20 @@ public class Peripheral extends BluetoothGattCallback {
         connectCallback = null;
         connected = false;
 
-			  synchronized (this) {
-          if (gatt != null) {
-              try {
-                  gatt.disconnect();
-                  gatt.close();
-                  gatt = null;
-                  Log.d(LOG_TAG, "Disconnect");
-                  sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
-              } catch (Exception e) {
-                  sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
-                  Log.d(LOG_TAG, "Error on disconnect", e);
-              }
-          } else
-              Log.d(LOG_TAG, "GATT is null");
+        synchronized (this) {
+            if (gatt != null) {
+                try {
+                    gatt.disconnect();
+                    gatt.close();
+                    gatt = null;
+                    Log.d(LOG_TAG, "Disconnect");
+                    sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
+                } catch (Exception e) {
+                    sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
+                    Log.d(LOG_TAG, "Error on disconnect", e);
+                }
+            } else
+                Log.d(LOG_TAG, "GATT is null");
         }
     }
 
@@ -227,12 +226,12 @@ public class Peripheral extends BluetoothGattCallback {
     public void onServicesDiscovered(BluetoothGatt gatt, int status) {
         super.onServicesDiscovered(gatt, status);
 
-  			synchronized (this) {
-          if (retrieveServicesCallback != null) {
-              WritableMap map = this.asWritableMap(gatt);
-              retrieveServicesCallback.invoke(null, map);
-              retrieveServicesCallback = null;
-          }
+        synchronized (this) {
+            if (retrieveServicesCallback != null) {
+                WritableMap map = this.asWritableMap(gatt);
+                retrieveServicesCallback.invoke(null, map);
+                retrieveServicesCallback = null;
+            }
         }
     }
 
@@ -272,7 +271,7 @@ public class Peripheral extends BluetoothGattCallback {
                         this.gatt = null;
                     }
                 }
-           }
+            }
 
             sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
             synchronized (this) {
@@ -346,7 +345,7 @@ public class Peripheral extends BluetoothGattCallback {
 
                 readCallback = null;
             }
-       }
+        }
 
     }
 
@@ -385,7 +384,7 @@ public class Peripheral extends BluetoothGattCallback {
     public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
         super.onDescriptorWrite(gatt, descriptor, status);
 
-			  synchronized (this) {
+        synchronized (this) {
             if (registerNotifyCallback != null) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     registerNotifyCallback.invoke();
@@ -395,14 +394,14 @@ public class Peripheral extends BluetoothGattCallback {
 
                 registerNotifyCallback = null;
             }
-       }
+        }
     }
 
     @Override
     public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
         super.onReadRemoteRssi(gatt, rssi, status);
 
-			  synchronized (this) {
+        synchronized (this) {
             if (readRSSICallback != null) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     updateRssi(rssi);
@@ -413,7 +412,7 @@ public class Peripheral extends BluetoothGattCallback {
 
                 readRSSICallback = null;
             }
-       }
+        }
     }
 
     private void setNotify(UUID serviceUUID, UUID characteristicUUID, Boolean notify, Callback callback) {
@@ -647,7 +646,7 @@ public class Peripheral extends BluetoothGattCallback {
                 synchronized (this) {
                     if (writeCallback != null) {
                         callback.invoke("You're already writing");
-                        writeCallback == null;
+                        writeCallback = null;
                         return;
                     }
                 }
@@ -729,42 +728,42 @@ public class Peripheral extends BluetoothGattCallback {
     }
 
     public void requestMTU(int mtu, Callback callback) {
-  		if (!isConnected()) {
-  			callback.invoke("Device is not connected", null);
-  			return;
-  		}
+        if (!isConnected()) {
+            callback.invoke("Device is not connected", null);
+            return;
+        }
 
-  		if (gatt == null) {
-  			callback.invoke("BluetoothGatt is null", null);
-  			return;
-  		}
+        if (gatt == null) {
+            callback.invoke("BluetoothGatt is null", null);
+            return;
+        }
 
-  		if (Build.VERSION.SDK_INT >= LOLLIPOP) {
-  			requestMTUCallback = callback;
-  			gatt.requestMtu(mtu);
-  		} else {
-  			callback.invoke("The requestMTU require at least 21 API level", null);
-  			return;
-  		}
+        if (Build.VERSION.SDK_INT >= LOLLIPOP) {
+            requestMTUCallback = callback;
+            gatt.requestMtu(mtu);
+        } else {
+            callback.invoke("The requestMTU require at least 21 API level", null);
+            return;
+        }
 
-  	}
+    }
 
-  	@Override
-  	public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
-  		super.onMtuChanged(gatt, mtu, status);
+    @Override
+    public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
+        super.onMtuChanged(gatt, mtu, status);
 
-      synchronized (this) {
-      		if (requestMTUCallback != null) {
-      			if (status == BluetoothGatt.GATT_SUCCESS) {
-      				requestMTUCallback.invoke(null, mtu);
-      			} else {
-      				requestMTUCallback.invoke("Error requesting MTU status=" + status, null);
-      			}
+        synchronized (this) {
+            if (requestMTUCallback != null) {
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    requestMTUCallback.invoke(null, mtu);
+                } else {
+                    requestMTUCallback.invoke("Error requesting MTU status=" + status, null);
+                }
 
-      			requestMTUCallback = null;
-      		}
-      }
-  	}
+                requestMTUCallback = null;
+            }
+        }
+    }
 
 
     // Some peripherals re-use UUIDs for multiple characteristics so we need to check the properties

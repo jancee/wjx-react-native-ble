@@ -16,11 +16,8 @@ import android.util.Log;
 import com.facebook.react.bridge.*;
 import com.facebook.react.modules.core.RCTNativeAppEventEmitter;
 
-import java.util.*;
-
 import static android.app.Activity.RESULT_OK;
 import static android.os.Build.VERSION_CODES.LOLLIPOP;
-import static com.facebook.react.bridge.UiThreadUtil.runOnUiThread;
 
 
 /**
@@ -235,10 +232,10 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
             }
         }
         synchronized (this) {
-          if (scanManager != null)
-              scanManager.scan(serviceUUIDs, scanSeconds, options, callback);
-          else
-              callback.invoke("bluetooth not init");
+            if (scanManager != null)
+                scanManager.scan(serviceUUIDs, scanSeconds, options, callback);
+            else
+                callback.invoke("bluetooth not init");
         }
     }
 
@@ -316,7 +313,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
     public void disconnect(String peripheralUUID, Callback callback) {
         Log.d(LOG_TAG, "Disconnect from: " + peripheralUUID);
 
-        synchronized(this) {
+        synchronized (this) {
             Peripheral peripheral = peripherals.get(peripheralUUID);
             if (peripheral != null) {
                 peripheral.disconnect();
@@ -338,7 +335,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
     public void startNotification(String deviceUUID, String serviceUUID, String characteristicUUID, Callback callback) {
         Log.d(LOG_TAG, "startNotification");
 
-        synchronized(this) {
+        synchronized (this) {
             Peripheral peripheral = peripherals.get(deviceUUID);
             if (peripheral != null) {
                 peripheral.registerNotify(UUIDHelper.uuidFromString(serviceUUID), UUIDHelper.uuidFromString(characteristicUUID), callback);
@@ -359,7 +356,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
     public void stopNotification(String deviceUUID, String serviceUUID, String characteristicUUID, Callback callback) {
         Log.d(LOG_TAG, "stopNotification");
 
-        synchronized(this) {
+        synchronized (this) {
             Peripheral peripheral = peripherals.get(deviceUUID);
             if (peripheral != null) {
                 peripheral.removeNotify(UUIDHelper.uuidFromString(serviceUUID), UUIDHelper.uuidFromString(characteristicUUID), callback);
@@ -382,7 +379,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
     public void write(String deviceUUID, String serviceUUID, String characteristicUUID, ReadableArray message, Integer maxByteSize, Callback callback) {
         Log.d(LOG_TAG, "Write to: " + deviceUUID);
 
-        synchronized(this) {
+        synchronized (this) {
             Peripheral peripheral = peripherals.get(deviceUUID);
             if (peripheral != null) {
                 byte[] decoded = new byte[message.size()];
@@ -412,7 +409,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
     public void writeWithoutResponse(String deviceUUID, String serviceUUID, String characteristicUUID, ReadableArray message, Integer maxByteSize, Integer queueSleepTime, Callback callback) {
         Log.d(LOG_TAG, "Write without response to: " + deviceUUID);
 
-        synchronized(this) {
+        synchronized (this) {
             Peripheral peripheral = peripherals.get(deviceUUID);
             if (peripheral != null) {
                 byte[] decoded = new byte[message.size()];
@@ -439,7 +436,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
     public void read(String deviceUUID, String serviceUUID, String characteristicUUID, Callback callback) {
         Log.d(LOG_TAG, "Read from: " + deviceUUID);
 
-        synchronized(this) {
+        synchronized (this) {
             Peripheral peripheral = peripherals.get(deviceUUID);
             if (peripheral != null) {
                 peripheral.read(UUIDHelper.uuidFromString(serviceUUID), UUIDHelper.uuidFromString(characteristicUUID), callback);
@@ -458,7 +455,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
     public void retrieveServices(String deviceUUID, Callback callback) {
         Log.d(LOG_TAG, "Retrieve services from: " + deviceUUID);
 
-        synchronized(this) {
+        synchronized (this) {
             Peripheral peripheral = peripherals.get(deviceUUID);
             if (peripheral != null) {
                 peripheral.retrieveServices(callback);
@@ -477,7 +474,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
     public void readRSSI(String deviceUUID, Callback callback) {
         Log.d(LOG_TAG, "Read RSSI from: " + deviceUUID);
 
-        synchronized(this) {
+        synchronized (this) {
             Peripheral peripheral = peripherals.get(deviceUUID);
             if (peripheral != null) {
                 peripheral.readRSSI(callback);
@@ -495,7 +492,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
     public void checkState() {
         Log.d(LOG_TAG, "checkState");
 
-        synchronized(this) {
+        synchronized (this) {
             //获取蓝牙适配器状态
             BluetoothAdapter adapter = getBluetoothAdapter();
             String state = "off";
@@ -525,7 +522,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
     public void getDiscoveredPeripherals(Callback callback) {
         Log.d(LOG_TAG, "获取搜索到的设备");
 
-        synchronized(this) {
+        synchronized (this) {
             WritableArray map = Arguments.createArray();
             Map<String, Peripheral> peripheralsCopy = new LinkedHashMap<>(peripherals);
             for (Map.Entry<String, Peripheral> entry : peripheralsCopy.entrySet()) {
@@ -547,7 +544,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
     public void getConnectedPeripherals(ReadableArray serviceUUIDs, Callback callback) {
         Log.d(LOG_TAG, "获取已连接的设备");
 
-        synchronized(this) {
+        synchronized (this) {
             WritableArray map = Arguments.createArray();
             Map<String, Peripheral> peripheralsCopy = new LinkedHashMap<>(peripherals);
             for (Map.Entry<String, Peripheral> entry : peripheralsCopy.entrySet()) {
@@ -581,7 +578,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
     public void removePeripheral(String deviceUUID, Callback callback) {
         Log.d(LOG_TAG, "Removing from list: " + deviceUUID);
 
-        synchronized(this) {
+        synchronized (this) {
             Peripheral peripheral = peripherals.get(deviceUUID);
             if (peripheral != null) {
                 if (peripheral.isConnected()) {
