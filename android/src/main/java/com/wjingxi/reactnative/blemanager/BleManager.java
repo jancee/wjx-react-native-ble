@@ -234,11 +234,12 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
                 }
             }
         }
-
-        if (scanManager != null)
-            scanManager.scan(serviceUUIDs, scanSeconds, options, callback);
-        else
-            callback.invoke("bluetooth not init");
+        synchronized (this) {
+          if (scanManager != null)
+              scanManager.scan(serviceUUIDs, scanSeconds, options, callback);
+          else
+              callback.invoke("bluetooth not init");
+        }
     }
 
     /**
@@ -618,13 +619,15 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
     public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
         Log.d(LOG_TAG, "onActivityResult");
 
-        if (requestCode == ENABLE_REQUEST && enableBluetoothCallback != null) {
-            if (resultCode == RESULT_OK) {
-                enableBluetoothCallback.invoke();
-            } else {
-                enableBluetoothCallback.invoke("User refused to enable");
+        synchronized (this) {
+            if (requestCode == ENABLE_REQUEST && enableBluetoothCallback != null) {
+                if (resultCode == RESULT_OK) {
+                    enableBluetoothCallback.invoke();
+                } else {
+                    enableBluetoothCallback.invoke("User refused to enable");
+                }
+                enableBluetoothCallback = null;
             }
-            enableBluetoothCallback = null;
         }
     }
 

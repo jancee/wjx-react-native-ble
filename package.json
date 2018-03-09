@@ -1,6 +1,6 @@
 {
   "name": "wjx-react-native-ble",
-  "version": "1.3.5",
+  "version": "1.4.0",
   "description": "A component for React Native, the ble control on the mobile terminal is realized.",
   "main": "BleManager.js",
   "scripts": {

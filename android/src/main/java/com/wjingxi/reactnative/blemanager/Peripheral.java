@@ -89,10 +89,12 @@ public class Peripheral extends BluetoothGattCallback {
         } else { //已连接
             //Log.e(LOG_TAG, "该设备当前已连接");
 
-            if (gatt != null) {
-                callback.invoke();
-            } else {
-                callback.invoke("BluetoothGatt is null");
+            synchronized (this) {
+                if (gatt != null) {
+                    callback.invoke();
+                } else {
+                    callback.invoke("BluetoothGatt is null");
+                }
             }
         }
     }
@@ -100,19 +102,22 @@ public class Peripheral extends BluetoothGattCallback {
     public void disconnect() {
         connectCallback = null;
         connected = false;
-        if (gatt != null) {
-            try {
-                gatt.disconnect();
-                gatt.close();
-                gatt = null;
-                Log.d(LOG_TAG, "Disconnect");
-                sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
-            } catch (Exception e) {
-                sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
-                Log.d(LOG_TAG, "Error on disconnect", e);
-            }
-        } else
-            Log.d(LOG_TAG, "GATT is null");
+
+			  synchronized (this) {
+          if (gatt != null) {
+              try {
+                  gatt.disconnect();
+                  gatt.close();
+                  gatt = null;
+                  Log.d(LOG_TAG, "Disconnect");
+                  sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
+              } catch (Exception e) {
+                  sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
+                  Log.d(LOG_TAG, "Error on disconnect", e);
+              }
+          } else
+              Log.d(LOG_TAG, "GATT is null");
+        }
     }
 
     public WritableMap asWritableMap() {
@@ -221,10 +226,13 @@ public class Peripheral extends BluetoothGattCallback {
     @Override
     public void onServicesDiscovered(BluetoothGatt gatt, int status) {
         super.onServicesDiscovered(gatt, status);
-        if (retrieveServicesCallback != null) {
-            WritableMap map = this.asWritableMap(gatt);
-            retrieveServicesCallback.invoke(null, map);
-            retrieveServicesCallback = null;
+
+  			synchronized (this) {
+          if (retrieveServicesCallback != null) {
+              WritableMap map = this.asWritableMap(gatt);
+              retrieveServicesCallback.invoke(null, map);
+              retrieveServicesCallback = null;
+          }
         }
     }
 
@@ -241,38 +249,46 @@ public class Peripheral extends BluetoothGattCallback {
 
             sendConnectionEvent(device, "BleManagerConnectPeripheral");
 
-            if (connectCallback != null) {
-                Log.d(LOG_TAG, "Connected to: " + device.getAddress());
-                connectCallback.invoke();
-                connectCallback = null;
-            } else {
-                Log.w(LOG_TAG, "没找到连接结果回调方法");
+            synchronized (this) {
+                if (connectCallback != null) {
+                    Log.d(LOG_TAG, "Connected to: " + device.getAddress());
+                    connectCallback.invoke();
+                    connectCallback = null;
+                } else {
+                    Log.w(LOG_TAG, "没找到连接结果回调方法");
+                }
             }
 
         } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
             Log.d(LOG_TAG, "设备断开");
 
-            if (connected) {
-                connected = false;
+            synchronized (this) {
+                if (connected) {
+                    connected = false;
 
-                if (gatt != null) {
-                    gatt.disconnect();
-                    gatt.close();
-                    this.gatt = null;
+                    if (gatt != null) {
+                        gatt.disconnect();
+                        gatt.close();
+                        this.gatt = null;
+                    }
                 }
-            }
+           }
 
             sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
-            List<Callback> callbacks = Arrays.asList(writeCallback, retrieveServicesCallback, readRSSICallback, readCallback, registerNotifyCallback);
-            for (Callback currentCallback : callbacks) {
-                if (currentCallback != null) {
-                    currentCallback.invoke("Device disconnected");
+            synchronized (this) {
+                List<Callback> callbacks = Arrays.asList(writeCallback, retrieveServicesCallback, readRSSICallback, readCallback, registerNotifyCallback);
+                for (Callback currentCallback : callbacks) {
+                    if (currentCallback != null) {
+                        currentCallback.invoke("Device disconnected");
+                    }
                 }
             }
 
-            if (connectCallback != null) {
-                connectCallback.invoke("Connection error");
-                connectCallback = null;
+            synchronized (this) {
+                if (connectCallback != null) {
+                    connectCallback.invoke("Connection error");
+                    connectCallback = null;
+                }
             }
 
             writeCallback = null;
@@ -316,21 +332,21 @@ public class Peripheral extends BluetoothGattCallback {
         super.onCharacteristicRead(gatt, characteristic, status);
         Log.d(LOG_TAG, "onCharacteristicRead " + characteristic);
 
-        if (readCallback != null) {
+        synchronized (this) {
+            if (readCallback != null) {
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    byte[] dataValue = characteristic.getValue();
 
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                byte[] dataValue = characteristic.getValue();
-
-                if (readCallback != null) {
-                    readCallback.invoke(null, BleManager.bytesToWritableArray(dataValue));
+                    if (readCallback != null) {
+                        readCallback.invoke(null, BleManager.bytesToWritableArray(dataValue));
+                    }
+                } else {
+                    readCallback.invoke("Error reading " + characteristic.getUuid() + " status=" + status, null);
                 }
-            } else {
-                readCallback.invoke("Error reading " + characteristic.getUuid() + " status=" + status, null);
+
+                readCallback = null;
             }
-
-            readCallback = null;
-
-        }
+       }
 
     }
 
@@ -339,57 +355,65 @@ public class Peripheral extends BluetoothGattCallback {
     public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicWrite(gatt, characteristic, status);
 
-        if (writeCallback != null) {
-            if (writeQueue.size() > 0) { //还有排队的写任务
-                //获取并移除队列中的第一条
-                byte[] data = writeQueue.get(0);
-                writeQueue.remove(0);
+        synchronized (this) {
+            if (writeCallback != null) {
+                if (writeQueue.size() > 0) { //还有排队的写任务
+                    //获取并移除队列中的第一条
+                    byte[] data = writeQueue.get(0);
+                    writeQueue.remove(0);
 
-                //继续发送数据
-                doWrite(characteristic, data);
-            } else { //没有排队
-                //回调写结果
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                    writeCallback.invoke();
-                } else {
-                    Log.e(LOG_TAG, "Error onCharacteristicWrite:" + status);
-                    writeCallback.invoke("Error writing status: " + status);
+                    //继续发送数据
+                    doWrite(characteristic, data);
+                } else { //没有排队
+                    //回调写结果
+                    if (status == BluetoothGatt.GATT_SUCCESS) {
+                        writeCallback.invoke();
+                    } else {
+                        Log.e(LOG_TAG, "Error onCharacteristicWrite:" + status);
+                        writeCallback.invoke("Error writing status: " + status);
+                    }
+
+                    writeCallback = null;
                 }
-
-                writeCallback = null;
+            } else {
+                Log.i(LOG_TAG, "写数据，没有回调");
             }
-        } else {
-            Log.i(LOG_TAG, "写数据，没有回调");
         }
     }
 
     @Override
     public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
         super.onDescriptorWrite(gatt, descriptor, status);
-        if (registerNotifyCallback != null) {
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                registerNotifyCallback.invoke();
-            } else {
-                registerNotifyCallback.invoke("Error writing descriptor stats=" + status, null);
-            }
 
-            registerNotifyCallback = null;
-        }
+			  synchronized (this) {
+            if (registerNotifyCallback != null) {
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    registerNotifyCallback.invoke();
+                } else {
+                    registerNotifyCallback.invoke("Error writing descriptor stats=" + status, null);
+                }
+
+                registerNotifyCallback = null;
+            }
+       }
     }
 
     @Override
     public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
         super.onReadRemoteRssi(gatt, rssi, status);
-        if (readRSSICallback != null) {
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                updateRssi(rssi);
-                readRSSICallback.invoke(null, rssi);
-            } else {
-                readRSSICallback.invoke("Error reading RSSI status=" + status, null);
-            }
 
-            readRSSICallback = null;
-        }
+			  synchronized (this) {
+            if (readRSSICallback != null) {
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    updateRssi(rssi);
+                    readRSSICallback.invoke(null, rssi);
+                } else {
+                    readRSSICallback.invoke("Error reading RSSI status=" + status, null);
+                }
+
+                readRSSICallback = null;
+            }
+       }
     }
 
     private void setNotify(UUID serviceUUID, UUID characteristicUUID, Boolean notify, Callback callback) {
@@ -620,9 +644,12 @@ public class Peripheral extends BluetoothGattCallback {
                     return;
                 }
 
-                if (writeCallback != null) {
-                    callback.invoke("You're already writing");
-                    return;
+                synchronized (this) {
+                    if (writeCallback != null) {
+                        callback.invoke("You're already writing");
+                        writeCallback == null;
+                        return;
+                    }
                 }
 
                 if (writeQueue.size() == 0 && writeCallback == null) {
@@ -725,15 +752,18 @@ public class Peripheral extends BluetoothGattCallback {
   	@Override
   	public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
   		super.onMtuChanged(gatt, mtu, status);
-  		if (requestMTUCallback != null) {
-  			if (status == BluetoothGatt.GATT_SUCCESS) {
-  				requestMTUCallback.invoke(null, mtu);
-  			} else {
-  				requestMTUCallback.invoke("Error requesting MTU status=" + status, null);
-  			}
 
-  			requestMTUCallback = null;
-  		}
+      synchronized (this) {
+      		if (requestMTUCallback != null) {
+      			if (status == BluetoothGatt.GATT_SUCCESS) {
+      				requestMTUCallback.invoke(null, mtu);
+      			} else {
+      				requestMTUCallback.invoke("Error requesting MTU status=" + status, null);
+      			}
+
+      			requestMTUCallback = null;
+      		}
+      }
   	}
 
 
