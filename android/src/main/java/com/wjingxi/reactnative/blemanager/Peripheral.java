@@ -22,6 +22,12 @@ import com.facebook.react.modules.core.RCTNativeAppEventEmitter;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.UUID;
+
 import static android.os.Build.VERSION_CODES.LOLLIPOP;
 
 /**
