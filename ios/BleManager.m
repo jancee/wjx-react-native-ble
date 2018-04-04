@@ -869,13 +869,13 @@ didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic
              error:(NSError *)error {
     @synchronized(self) {
         NSString *key = [self keyForPeripheral: peripheral andCharacteristic:characteristic];
-        RCTResponseSenderBlock readCallback = [readCallbacks objectForKey:key];
+        RCTResponseSenderBlock readCallback = [self.readCallbacks objectForKey:key];
 
         if (error) {
             NSLog(@"Error %@ :%@", characteristic.UUID, error);
             if (readCallback != NULL) {
                 readCallback(@[error, [NSNull null]]);
-                [readCallbacks removeObjectForKey:key];
+                [self.readCallbacks removeObjectForKey:key];
             }
             return;
         }
